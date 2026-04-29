@@ -1,0 +1,33 @@
+{
+    "ACC001": {
+        "name": "Rahul Sharma",
+        "atm_pin": "1234",
+        "balance": 37544,
+        "transactions": [
+            {
+                "type": "Deposit",
+                "amount": 1000,
+                "date": "29 Apr 2026, 11:14 PM",
+                "balance_after": 51000
+            },
+            {
+                "type": "Withdrawal",
+                "amount": 13456,
+                "date": "29 Apr 2026, 11:16 PM",
+                "balance_after": 37544
+            }
+        ]
+    },
+    "ACC002": {
+        "name": "Priya Mehta",
+        "atm_pin": "5678",
+        "balance": 120000,
+        "transactions": []
+    },
+    "ACC003": {
+        "name": "Arjun Singh",
+        "atm_pin": "9999",
+        "balance": 8500,
+        "transactions": []
+    }
+}

@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ATM</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #0a0c10;
+    --panel:    #111520;
+    --border:   #1e2a3a;
+    --accent:   #00d4ff;
+    --accent2:  #00ff99;
+    --danger:   #ff4060;
+    --text:     #c8d8e8;
+    --muted:    #4a6070;
+    --glow:     0 0 18px rgba(0,212,255,.35);
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-ui:   'Rajdhani', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* grid lines background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* ── ATM shell ── */
+  .atm {
+    width: 420px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 0 60px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.04);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* top bar */
+  .atm-header {
+    background: #0d1520;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .atm-header .logo {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .atm-header .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 8px var(--accent2);
+    margin-left: auto;
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* screen area */
+  .screen {
+    padding: 28px 28px 24px;
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── views ── */
+  .view { display: none; flex-direction: column; flex: 1; }
+  .view.active { display: flex; }
+
+  /* login */
+  .screen-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 28px;
+    text-transform: uppercase;
+  }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .field input {
+    width: 100%;
+    background: #0a0e18;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 11px 14px;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 16px;
+    letter-spacing: 3px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+  }
+  .field input[type="password"] { letter-spacing: 6px; }
+
+  /* buttons */
+  .btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 3px;
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    margin-top: 8px;
+  }
+  .btn-primary:hover { opacity: .88; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    margin-top: 8px;
+    font-size: 13px;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+    margin-top: 8px;
+  }
+
+  /* welcome banner */
+  .welcome-banner {
+    background: linear-gradient(135deg,#0d1a2a,#0a1520);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 16px 18px;
+    margin-bottom: 22px;
+  }
+  .welcome-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent2);
+    margin-bottom: 4px;
+  }
+  .welcome-balance {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    color: var(--accent);
+  }
+  .welcome-balance span { font-size: 13px; color: var(--muted); margin-right: 4px; }
+
+  /* menu grid */
+  .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+  }
+  .menu-btn {
+    background: #0d1520;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 18px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: border-color .2s, background .2s;
+  }
+  .menu-btn:hover { border-color: var(--accent); background: #0f1d2e; }
+  .menu-btn .icon { font-size: 22px; }
+
+  /* amount input view */
+  .back-link {
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    display: inline-block;
+  }
+  .back-link:hover { color: var(--accent); }
+
+  /* transactions */
+  .txn-list { flex: 1; overflow-y: auto; }
+  .txn-list::-webkit-scrollbar { width: 4px; }
+  .txn-list::-webkit-scrollbar-track { background: transparent; }
+  .txn-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .txn-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .txn-item:last-child { border-bottom: none; }
+  .txn-type { font-size: 13px; font-weight: 600; color: var(--text); }
+  .txn-date { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: var(--font-mono); }
+  .txn-amount { font-family: var(--font-mono); font-size: 14px; text-align: right; }
+  .txn-amount.credit { color: var(--accent2); }
+  .txn-amount.debit  { color: var(--danger); }
+  .txn-bal { font-size: 10px; color: var(--muted); margin-top: 3px; font-family: var(--font-mono); }
+
+  .empty-state {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 13px; letter-spacing: 1px;
+  }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #111c2e;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    padding: 12px 22px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity .3s, transform .3s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 999;
+  }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* receipt overlay */
+  .receipt-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 20px;
+  }
+  .receipt-overlay.open { display: flex; }
+  .receipt {
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 28px 24px;
+    width: 100%;
+    box-shadow: var(--glow);
+  }
+  .receipt-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 18px;
+    text-transform: uppercase;
+  }
+  .receipt-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  .receipt-row .label { color: var(--muted); }
+  .receipt-row .value { font-family: var(--font-mono); color: var(--accent2); }
+  .receipt-divider { border: none; border-top: 1px dashed var(--border); margin: 14px 0; }
+
+  /* loader */
+  .loader {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--muted);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .atm-footer {
+    background: #0d1520;
+    border-top: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="atm">
+
+  <!-- header -->
+  <div class="atm-header">
+    <div class="logo">&#9632; SecureBank ATM</div>
+    <div class="dot"></div>
+  </div>
+
+  <!-- screen -->
+  <div class="screen">
+
+    <!-- LOGIN -->
+    <div class="view active" id="view-login">
+      <div class="screen-title">&#47;&#47; Authentication required</div>
+      <div class="field">
+        <label>Account ID</label>
+        <input type="text" id="inp-id" placeholder="ACC001" autocomplete="off"/>
+      </div>
+      <div class="field">
+        <label>ATM PIN</label>
+        <input type="password" id="inp-pin" placeholder="••••" maxlength="6"/>
+      </div>
+      <button class="btn btn-primary" onclick="login()">
+        <span id="login-btn-text">AUTHENTICATE</span>
+      </button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="view" id="view-dashboard">
+      <div class="welcome-banner">
+        <div class="welcome-name" id="dash-name">—</div>
+        <div class="welcome-balance"><span>₹</span><span id="dash-balance">0.00</span></div>
+      </div>
+      <div class="menu-grid">
+        <button class="menu-btn" onclick="showView('view-deposit')">
+          <span class="icon">⬆</span> Deposit
+        </button>
+        <button class="menu-btn" onclick="showView('view-withdraw')">
+          <span class="icon">⬇</span> Withdraw
+        </button>
+        <button class="menu-btn" onclick="checkBalance()">
+          <span class="icon">◎</span> Balance
+        </button>
+        <button class="menu-btn" onclick="showView('view-transfer')">
+          <span class="icon">⇄</span> Transfer
+        </button>
+        <button class="menu-btn" style="grid-column:1/-1" onclick="loadTransactions()">
+          <span class="icon">≡</span> Mini Statement
+        </button>
+      </div>
+      <button class="btn btn-ghost" onclick="logout()" style="margin-top:14px">LOGOUT</button>
+    </div>
+
+    <!-- DEPOSIT -->
+    <div class="view" id="view-deposit">
+      <span class="back-link" onclick="showView('view-dashboard')">← Back</span>
+      <div class="screen-title">&#47;&#47; Deposit cash</div>
+      <div class="field">
+        <label>Amount (₹)</label>
+        <input type="number" id="inp-deposit" placeholder="e.g. 5000" min="1"/>
+      </div>
+      <button class="btn btn-primary" onclick="doDeposit()">DEPOSIT</button>
+    </div>
+
+    <!-- WITHDRAW -->
+    <div class="view" id="view-withdraw">
+      <span class="back-link" onclick="showView('view-dashboard')">← Back</span>
+      <div class="screen-title">&#47;&#47; Withdraw cash</div>
+      <div class="field">
+        <label>Amount (₹)</label>
+        <input type="number" id="inp-withdraw" placeholder="e.g. 2000" min="1"/>
+      </div>
+      <button class="btn btn-primary" onclick="doWithdraw()">WITHDRAW</button>
+    </div>
+
+    <!-- TRANSFER -->
+    <div class="view" id="view-transfer">
+      <span class="back-link" onclick="showView('view-dashboard')">← Back</span>
+      <div class="screen-title">&#47;&#47; Fund transfer</div>
+      <div class="field">
+        <label>Recipient Account ID</label>
+        <input type="text" id="inp-target" placeholder="ACC002" autocomplete="off"/>
+      </div>
+      <div class="field">
+        <label>Amount (₹)</label>
+        <input type="number" id="inp-transfer-amt" placeholder="e.g. 1000" min="1"/>
+      </div>
+      <button class="btn btn-primary" onclick="doTransfer()">TRANSFER</button>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="view" id="view-transactions">
+      <span class="back-link" onclick="showView('view-dashboard')">← Back</span>
+      <div class="screen-title">&#47;&#47; Last 10 transactions</div>
+      <div class="txn-list" id="txn-list"></div>
+    </div>
+
+  </div><!-- /screen -->
+
+  <!-- receipt overlay -->
+  <div class="receipt-overlay" id="receipt-overlay">
+    <div class="receipt">
+      <div class="receipt-title">&#9632; Transaction Receipt</div>
+      <div class="receipt-row"><span class="label">TYPE</span><span class="value" id="r-type">—</span></div>
+      <div class="receipt-row"><span class="label">AMOUNT</span><span class="value" id="r-amount">—</span></div>
+      <hr class="receipt-divider"/>
+      <div class="receipt-row"><span class="label">NEW BALANCE</span><span class="value" id="r-balance">—</span></div>
+      <div class="receipt-row"><span class="label">DATE</span><span class="value" id="r-date">—</span></div>
+      <button class="btn btn-primary" style="margin-top:18px" onclick="closeReceipt()">DONE</button>
+    </div>
+  </div>
+
+  <div class="atm-footer">
+    <span id="footer-id">NOT LOGGED IN</span>
+    <span id="footer-time"></span>
+  </div>
+</div>
+
+<!-- toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://127.0.0.1:5000/api';
+let session = { id: null, name: null, balance: 0 };
+
+// ── clock ──
+function updateClock() {
+  document.getElementById('footer-time').textContent =
+    new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── view switcher ──
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── toast ──
+function toast(msg, error = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (error ? ' error' : '') + ' show';
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── receipt ──
+function showReceipt(type, amount, balance) {
+  document.getElementById('r-type').textContent    = type;
+  document.getElementById('r-amount').textContent  = '₹ ' + amount.toLocaleString('en-IN');
+  document.getElementById('r-balance').textContent = '₹ ' + balance.toLocaleString('en-IN');
+  document.getElementById('r-date').textContent    = new Date().toLocaleString('en-IN');
+  document.getElementById('receipt-overlay').classList.add('open');
+}
+function closeReceipt() {
+  document.getElementById('receipt-overlay').classList.remove('open');
+  showView('view-dashboard');
+}
+
+// ── update dashboard balance ──
+function updateDash(balance) {
+  session.balance = balance;
+  document.getElementById('dash-balance').textContent = balance.toLocaleString('en-IN', {minimumFractionDigits:2});
+}
+
+// ── LOGIN ──
+async function login() {
+  const id  = document.getElementById('inp-id').value.trim();
+  const pin = document.getElementById('inp-pin').value.trim();
+  if (!id || !pin) { toast('Enter ID and PIN', true); return; }
+
+  const btn = document.getElementById('login-btn-text');
+  btn.innerHTML = '<span class="loader"></span> VERIFYING';
+
+  try {
+    const res  = await fetch(`${API}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, pin })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      session.id   = id;
+      session.name = data.name;
+      document.getElementById('dash-name').textContent = data.name;
+      document.getElementById('footer-id').textContent = id;
+      updateDash(data.balance);
+      document.getElementById('inp-pin').value = '';
+      showView('view-dashboard');
+      toast('Welcome back, ' + data.name.split(' ')[0]);
+    } else {
+      toast(data.message || 'Authentication failed', true);
+    }
+  } catch(e) {
+    toast('Cannot reach server', true);
+  }
+
+  btn.textContent = 'AUTHENTICATE';
+}
+
+// ── BALANCE ──
+async function checkBalance() {
+  try {
+    const res  = await fetch(`${API}/balance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: session.id })
+    });
+    const data = await res.json();
+    if (data.success) {
+      updateDash(data.balance);
+      toast('Balance: ₹ ' + data.balance.toLocaleString('en-IN'));
+    }
+  } catch(e) { toast('Error fetching balance', true); }
+}
+
+// ── DEPOSIT ──
+async function doDeposit() {
+  const amount = parseFloat(document.getElementById('inp-deposit').value);
+  if (!amount || amount <= 0) { toast('Enter a valid amount', true); return; }
+
+  try {
+    const res  = await fetch(`${API}/deposit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: session.id, amount })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      updateDash(data.balance);
+      document.getElementById('inp-deposit').value = '';
+      showReceipt('DEPOSIT', amount, data.balance);
+    } else {
+      toast(data.message, true);
+    }
+  } catch(e) { toast('Error connecting to server', true); }
+}
+
+// ── WITHDRAW ──
+async function doWithdraw() {
+  const amount = parseFloat(document.getElementById('inp-withdraw').value);
+  if (!amount || amount <= 0) { toast('Enter a valid amount', true); return; }
+
+  try {
+    const res  = await fetch(`${API}/withdraw`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: session.id, amount })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      updateDash(data.balance);
+      document.getElementById('inp-withdraw').value = '';
+      showReceipt('WITHDRAWAL', amount, data.balance);
+    } else {
+      toast(data.message, true);
+    }
+  } catch(e) { toast('Error connecting to server', true); }
+}
+
+// ── TRANSFER ──
+async function doTransfer() {
+  const target = document.getElementById('inp-target').value.trim();
+  const amount = parseFloat(document.getElementById('inp-transfer-amt').value);
+  if (!target)           { toast('Enter recipient account ID', true); return; }
+  if (!amount || amount <= 0) { toast('Enter a valid amount', true); return; }
+
+  try {
+    const res  = await fetch(`${API}/transfer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: session.id, target_id: target, amount })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      updateDash(data.balance);
+      document.getElementById('inp-target').value = '';
+      document.getElementById('inp-transfer-amt').value = '';
+      showReceipt('TRANSFER → ' + target, amount, data.balance);
+    } else {
+      toast(data.message, true);
+    }
+  } catch(e) { toast('Error connecting to server', true); }
+}
+
+// ── TRANSACTIONS ──
+async function loadTransactions() {
+  showView('view-transactions');
+  const list = document.getElementById('txn-list');
+  list.innerHTML = '<div class="empty-state"><span class="loader"></span> Loading...</div>';
+
+  try {
+    const res  = await fetch(`${API}/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: session.id })
+    });
+    const data = await res.json();
+
+    if (!data.success || data.transactions.length === 0) {
+      list.innerHTML = '<div class="empty-state">No transactions yet</div>';
+      return;
+    }
+
+    list.innerHTML = data.transactions.map(t => {
+      const isCredit = t.type.startsWith('Deposit') || t.type.startsWith('Transfer from');
+      return `
+        <div class="txn-item">
+          <div>
+            <div class="txn-type">${t.type}</div>
+            <div class="txn-date">${t.date}</div>
+          </div>
+          <div>
+            <div class="txn-amount ${isCredit ? 'credit' : 'debit'}">
+              ${isCredit ? '+' : '-'} ₹${t.amount.toLocaleString('en-IN')}
+            </div>
+            <div class="txn-bal">Bal: ₹${t.balance_after.toLocaleString('en-IN')}</div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="empty-state">Error loading transactions</div>';
+  }
+}
+
+// ── LOGOUT ──
+function logout() {
+  session = { id: null, name: null, balance: 0 };
+  document.getElementById('inp-id').value = '';
+  document.getElementById('inp-pin').value = '';
+  document.getElementById('footer-id').textContent = 'NOT LOGGED IN';
+  showView('view-login');
+  toast('Session ended');
+}
+
+// enter key on login
+document.getElementById('inp-pin').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+</script>
+</body>
+</html>
